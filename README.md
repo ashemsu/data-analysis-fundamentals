@@ -3,8 +3,6 @@ These projects encompass my first year of Data Analytics at UPenn.
 
 Overall, the projects were designed to test several key skills and concepts related to data analysis and visualization. Overall, they covered these key concepts in R:
 
-1. Certainly! Here’s the revised list without "you" terms:
-
 1. **Data Preparation and Cleaning:**
    - **Skill Tested:** Ability to clean and preprocess data for analysis.
    - **Assessment:** Evaluation of the capacity to remove irrelevant information, handle missing values, and prepare the dataset for meaningful analysis.
