@@ -1,4 +1,4 @@
-# data-fundamentals
+# Summary of Projects
 These projects encompass my first year of Data Analytics at UPenn. 
 
 Overall, the projects were designed to test several key skills and concepts related to data analysis and visualization. Overall, they covered these key concepts in R:
