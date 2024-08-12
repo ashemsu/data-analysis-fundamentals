@@ -1,0 +1,160 @@
+# 1. **First, read the 1976-2020 Senate election results data into a dataframe in R. 
+# You can either download the file through Canvas, or use 
+# [this link](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/PEJ5QU) 
+# (1976-2020-senate).**
+
+setwd(dir = "/Users/ade/Documents/Education/Dropbox/DATA101//DATA/RAW")
+library(readr)
+senate_election_results <- read_csv("Documents/Education/Dropbox/DATA101/DATA/RAW/1976-2020-senate.csv")
+View(X1976_2020_senate)
+
+# 2. **Out first step to clean this data is to keep only the 
+# columns with information we care about. Keep only the variables 
+#`year`, `state`, `state_po`, `stage`, `candidate`, `party_simplified`, 
+# `candidatevotes`, `totalvotes`.**
+
+senate_data_cleaned <- senate_election_results%>%
+  select("year", "state", "state_po", "stage", "candidate", "party_simplified",
+         "candidatevotes", "totalvotes")
+
+# 3. **Next, we're going to remove rows with some incomplete data. 
+# Remove any rows that have missing data in the "candidate"
+# or "party_simplified" columns.**
+
+senate_data_cleaned <- senate_data_cleaned%>%
+na.omit(candidate, party_simplified)
+
+# 4. **Next, create a new variable, "party3" which recodes the "party_simplified" 
+# column into "D" for Democrats, "R" for Republicans, and "I" for all other parties. 
+# (Hint: you may want to first create this column so that all rows equal "I". 
+# Then use the ifelse() function to recode to "R" if the row represents a Republican
+# and otherwise stays equal to its current value.)**
+
+senate_data_cleaned <- senate_data_cleaned%>%
+  mutate(party3 = recode(party_simplified, "DEMOCRAT" = "D", "REPUBLICAN" = "R", "LIBERTARIAN" = "I", "OTHER" = "I"))
+  
+
+# 5. **How many Democrats are in this dataset? How many Republicans? 
+# How many Independents?**
+
+senate_data_cleaned%>%
+  count(party3, "R", "D", "I")
+
+# 810 Democrats, 802 Republicans, 1594 Independents
+
+# 6. **Now let's look at the 2-party vote in these data. 
+# First, remove the independent candidates from the data. 
+# Next, remove all the rows where "stage" is not equal to "gen". 
+# This ensures that we only get results from the general election.**
+
+independent_data <- senate_data_cleaned%>%
+  filter(party3 == "I")
+
+twoparty_data <- senate_data_cleaned%>%
+  filter(party3!= "I", stage == "gen")
+
+# 7. **How many races were contested between more than two candidates?
+# Which state had the most of these races?**
+  
+contested_races <- senate_data_cleaned%>%
+  group_by(year, state)%>%
+  count(year)
+  
+morethantwo_candidates <- contested_races%>%
+  filter(n > 2)
+
+# 580 races were contested by more than two candidates. 
+# Louisiana had the most of these races.
+
+# 8. **For Democratic and Republican candidates create a figure that displays 
+# the year on the x-axis and each candidate's percent of the vote on the y-axis. 
+# Be sure to color code each candidate by their respective party. 
+# Add two lines--one for each party--that represents the trend in that 
+# parties' support over time.**
+
+candidate_perc_vote <- twoparty_data%>%
+  mutate(candidate_perc = candidatevotes/totalvotes)
+
+ggplot(candidate_perc_vote, aes(year, candidate_perc, color = party3))+
+  geom_point(alpha = .65)+
+  geom_smooth(method=lm)+
+  theme_light()+
+  ggtitle("2012 Senate Election Results")+
+  xlab("Year")+
+  ylab("Percent of Vote")
+
+# 9. **Let's take a look at the races from 2012. Filter your dataset so that it 
+# only contains the results for 2012, and only the columns `year`, `state`, 
+# `party3`, and the candidate percent you calculated in the previous question. 
+# Reshape this data so that there is only one row per state, and two columns 
+# that represent the percent of the vote won by the Republican candidate and the 
+# percent of the vote won by the Democratic candidate. 
+# Note that you will not have 50 rows because not all states have a Senate 
+# election in an election year.**
+
+candidates_2012 <- candidate_perc_vote%>%
+  filter(year == 2012)%>%
+  select(year, state, party3, candidate_perc)
+
+perc_2012 <- candidates_2012%>%
+  pivot_wider(names_from = party3, values_from = candidate_perc)
+
+
+# 10. **Create a variable "demwin" that records if the Democrat received a 
+# higher vote share than the Republican in each race in 2012.**
+
+perc_2012 <- perc_2012%>%
+  mutate(demwin = D > R)
+
+# 11. **Create a variable "demdiff" that records the difference between the 
+# Democratic percent and Republican percent of the vote in each race in 2012.**
+
+perc_2012 <- perc_2012%>%
+  mutate(demdiff = D - R)
+
+# 12. **Next, we're going to do some analysis to map this data. Load in the 
+# state-level mapping data that we've worked with from the package `mapdata`**
+
+
+install.packages("maps")
+install.packages("mapdata")
+library(mapdata)
+library(maps)
+
+states <- map_data("state")%>%
+  select(-subregion)
+  
+
+# 13. **Join the 2012 Senate election data to this mapping data. 
+# Be cautious about the format of the state names!**
+
+perc_2012 <- perc_2012%>%
+  mutate(state = tolower(state))
+
+state_voter_data <- perc_2012%>%
+  full_join(states, by = c("state" = "region"))
+
+# 14. **Create a map that shows the winner of each Senate contest in 2012, with 
+# Democrats in blue and Republicans in red. If there was no Senate contest in a 
+# state ([or if a party other than Democrats or Republicans won the seat]
+# (https://i.guim.co.uk/img/media/58adf5bbdd8ad0ba8a6c70ab7908178cbb5b1a0e/48_557_3862_2318/master/3862.jpg?width=445&quality=45&auto=format&fit=max&dpr=2&s=d0576b59344d8961e72dd679e52b4172)), leave the state blank. **
+
+ggplot(state_voter_data)+
+  geom_polygon(aes(x = long, y = lat, group = group, fill = demwin), col = "black", lwd = 0.25)+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2012 Senate Election Results")+
+  labs(fill = "Dem Won?")
+
+
+# 15. **Create a map that shades each state by the Democratic vote difference you 
+# created above. Again, If there was no Senate contest in a state 
+# (or if a party other than Democrats or Republicans won the seat), leave the state blank.**
+
+ggplot(state_voter_data)+
+  geom_polygon(aes(x = long, y = lat, group = group, fill = demdiff), col = "black", lwd = 0.25)+
+  scale_fill_gradient(low = "red", high = "blue")+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2012 Senate Election Results")+
+  labs(fill = "Dem Win Diff")
