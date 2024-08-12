@@ -1,0 +1,72 @@
+# 1. Solve problem 13.5.1.5 from R for Data Science.
+# 13.5.1.5
+# What does anti_join(flights, airports, by = c("dest" = "faa")) tell you? 
+# What does anti_join(airports, flights, by = c("faa" = "dest")) tell you?
+
+# The first line tells me that the data set won't display
+# the rows from "airports" that matches "flights".
+
+# The second line is the same, except that it would be in reverse, where the rows
+# from "airports" that don't have a match in flights would be displayed.
+
+#2. Find the day during 2013 that had the longest avg total delay. Using the 
+# weather data, can you shed any light on what happened on that day?
+
+nycflights13::flights
+
+# To find day with the longest delay:
+longest_delays <- flights%>%
+  filter(arr_delay>0, dep_delay >0)%>%
+  group_by(flight, day, month, arr_delay, dep_delay)%>%
+  summarise(lngst_avg_delay = mean(arr_delay + dep_delay))%>%
+  arrange(desc(lngst_avg_delay))
+
+# Incorporating the impact of weather on that day:
+longest_delays%>%
+  left_join(weather)
+
+# Based on the weather data, the longest delays (which appear to be rescheduled flights)
+# occurred as a result of inclement weather--specifically, bad winter weather.
+
+#3.Find airplane models with fastest avg speeds. What planes are they?
+
+# Finding fastest planes:
+fastest_planes <- planes%>%
+  filter(speed>400)%>%
+  group_by(model, type, speed, tailnum, seats)%>%
+  arrange(desc(speed))
+
+# Determining which models are fastest:
+fastest_planes%>%
+  left_join(flights, c("tailnum" = "tailnum"))%>%
+  count(model, tailnum, seats, sort=T) %>%
+  head(10)
+
+# The DC-9-51, a medium-sized airplane appears to be the fastest, which isn't 
+# surprised given the fact that it is lighter than the larger planes, but has more powerful
+# engines than the smaller ones.
+
+# 4. Solve 13.4.6.3 from R for Data Science.
+# 13.4.6.3.
+# Is there a relationship between the age of a plane and its delays?
+
+# To analyze age v. delays:
+plane_age <- planes%>%
+  group_by(year, tailnum)%>%
+  summarise(plane_age = mean(2021 - year))
+
+flight_delay <-flights%>%
+  group_by(arr_delay, day, month, tailnum)%>%
+  summarise(avg_delay = mean(arr_delay))%>%
+  arrange(desc(avg_delay))
+
+# Visualizing relationship:
+plane_age%>%
+  left_join(flight_delay, c("tailnum" = "tailnum"))%>%
+  ggplot(aes(plane_age, avg_delay, color = year))+
+  geom_point()+
+  coord_flip()
+
+# The relationship at face value appears to be the older a plane is, the lesser
+# the delay. I would surmise this is because the newer planes are more frequently used,
+# which also means they're more commonly delayed for things like weather and maintenance.
