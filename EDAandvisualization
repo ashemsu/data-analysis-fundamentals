@@ -1,0 +1,149 @@
+#Problem 1
+
+#Getting the data:
+
+library(tidyverse)
+library(lubridate)
+library(readr)
+
+trump_approve <- read_csv("https://projects.fivethirtyeight.com/trump-approval-data/approval_topline.csv")
+
+# Plotting the aggregate approval:
+
+aggregate_estimates <- trump_approve%>% # For easier viz into comparison
+  select(approve_estimate, disapprove_estimate, modeldate, subgroup)%>%
+  mutate(modeldate = mdy(modeldate))
+
+ggplot(aggregate_estimates)+
+  geom_point(mapping = aes(approve_estimate, modeldate, color = subgroup), alpha = .5)+
+  coord_flip()+
+  theme_dark()+
+  xlab("Estimated Rating")+
+  ylab("Year")
+  
+
+#A
+
+# Trump's approval rating in early 2020 (Feb-March of 2020 specifically) reached
+# a near-all time high (since 2017) on the heels of his response to the onslaught of 
+# COVID-19 and how the US, for a brief moment, was united behind our leadership
+# to shepherd us through those uncertain, scary times.
+
+
+# Problem 2
+
+# Getting NYCFlights and drilling down to relevant data
+
+library(nycflights13)
+view(flights)
+
+aggregate_flight_times <- flights%>% # For better viz
+  select(year, month, day, hour, minute, dep_delay)
+
+formatted_flight_times <- aggregate_flight_times%>%
+  mutate(departure = make_datetime(year, month, day, hour, minute))
+
+ggplot(formatted_flight_times)+
+  geom_point(aes(day, dep_delay, color = dep_delay))+
+  theme_gray()+
+  xlab("Day of the Month")+
+  ylab("Departure Delay")
+  
+# Based on the data in this graph, there are more delays (and longer delays) 
+# earlier in a typical week.
+
+# Problem 3
+
+# How does the average delay time change over the course of a day? 
+# Should you use dep_time or sched_dep_time? Why?
+
+# Finding hourly data:
+
+ggplot(formatted_flight_times)+
+  geom_point(aes(hour, dep_delay, color = dep_delay))+
+  theme_gray()+
+  xlab("Hour of the Day")+
+  ylab("Departure Delay")
+
+# According to this graph, the average delay time gets longer between mid-afternoon
+# and early evening (4:00 PM - 8:00 PM). If I wanted accurate data, I would be
+# choosing the actual dep_time over sched_dep_time, as the sched_dep_time can
+# help determine averages, but won't reflect the times when flights don't leave at
+# or before the scheduled time.
+
+# Problem 4
+
+# New dataset for cancelled flights
+
+cancellations <- flights%>%
+  select(year, month, day, hour, minute, dep_time, arr_time)%>%
+  mutate(departure = make_datetime(year, month, day, hour, minute))%>%
+  mutate(cancelled = is.na(arr_time))%>%
+  mutate(intervals = minutes(15)) %>%
+  group_by(intervals)
+
+# Plotting cancellations down to a per minute/hour basis
+
+cancellations%>%
+  filter(hour >= 5)%>%
+ggplot()+
+  geom_point(mapping = aes(minute, hour, color = cancelled))+
+  theme_dark()+
+  xlab("Minute of the Hour")+
+  ylab("Hour of the Day")
+
+# According to the plot, your flight is most likely to be cancelled in the middle of the day,
+# sometime between the 15 and 40 minute intervals of a given hour.
+
+# Problem 5
+
+# Getting the data
+
+install.packages("tidyquant")
+library(tidyquant)
+prices <- tq_get(c('AAPL', 'MSFT'),
+                 from = "2017-01-01",
+                 to = "2020-04-17",
+                 get = "stock.prices")
+
+#A
+
+# Plotting trends
+
+ggplot(prices)+
+  geom_point(mapping = aes(date, adjusted, color = symbol), alpha = .5)+
+  theme_linedraw()+
+  xlab("Year")+
+  ylab("Share Price")
+
+  
+# COVID-19 had the most prevalent impact on the price of the share prices, as
+# early 2020 (Feb/March) caused a catastrophic dip in Apple's market cap, and dinged 
+# Microsoft pretty hard as well.
+
+#B
+
+# Analyzing energy stocks
+
+energy_prices <- tq_get(c('UCO', 'SCO'),
+                 from = "2020-01-01",
+                 to = "2021-12-11",
+                 get = "stock.prices")
+
+# Plotting trends
+
+ggplot(energy_prices)+
+  geom_point(mapping = aes(date, adjusted, color = symbol), alpha = .5)+
+  theme_dark()+
+  xlab("Year")+
+  ylab("Share Price")
+
+# I chose this specifically because I followed energy stocks during this time frame (and still do).
+# These stocks are specifically interesting because they aren't associated with companies,
+# but rather are each depending on price action with regard to oil futures--more specifically,
+# WTI crude oil futures, which went through a deeply tumultuous period between early 2020
+# and now, as there were geopolitical, supply chain, and economic impacts on the contracts are the time.
+# SCO is the short against UCO, and though the share price wasn't exactly the same,
+# you will notice the synergistic relationship between the two; when one increases, the other decreases.
+# There is a lot more stability now, but if you ever wanted visibility into one factor determining the price
+# of fuel, look no further than these tickers.
