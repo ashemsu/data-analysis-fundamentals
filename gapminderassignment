@@ -1,0 +1,139 @@
+#######
+##DATA-2100
+##Adefoluke Shemsu
+#Week 2
+#######
+
+##------------------------------
+#PROBLEM 1: EXPLORING GAPMINDER DATA
+
+#1. Loading gapminder data from dslabs.
+
+setwd("~/Documents/Education/Penn/Classes/DATA 210/Week 2")
+
+install.packages("dslabs")
+library(dslabs)
+data(gapminder)
+View(gapminder)
+
+#2. Determining object type
+
+class(gapminder)
+
+#Object type = data.frame
+
+#3. Checking gapminder data dimensions
+
+dim(gapminder)
+
+#10,545 rows, 9 columns
+
+#4. Finding column names
+
+colnames(gapminder)
+
+# Names: Country, infant_mortality, fertility, gdp, region, year,
+# life_expectancy, population, continent
+
+#5. Finding hidden attributes:
+
+attributes(gapminder)
+
+#6. This dataframe likely lacks hidden attributes for the reason discussed during
+# the lecture, which was that most .csv data has already been organized and defined
+# appropriately based on what is available in that file type.
+
+#7. Finding the population of Norway in 1962.
+# Using the View() function:
+
+View(gapminder)
+
+# Population in 1962 = ~3.64 million people
+# Finding Norway '62 by column/row:
+
+subset(gapminder$country == "Norway", gapminder$year == 1962)
+
+#8. Finding countries with life expectancy lower than 40.
+
+lowlifeexpectancy <- subset(gapminder, gapminder$life_expectancy < 40) #To isolate < 40 life expectancy
+
+#Finding countries with low life expectancy in the 2000s and later.
+
+subset(lowlifeexpectancy, lowlifeexpectancy$year > 2000)
+
+#Haiti and the Caribbean had life expectancies of less than 40 in the 21st century.
+
+##--------------------------------
+# PROBLEM 2: COLLEGE MAJORS, Part A
+
+#1.Reading recent grads data.
+
+library(readr)
+recent_grads <- read_csv("~/Documents/Education/Penn/Classes/DATA 210/Week 2/recent-grads.csv")
+View(recent_grads)
+
+#2. Printing dimensions, class, row names, column names, etc.
+
+dim(recent_grads)
+
+# 173 rows, 21 columns
+
+class(recent_grads)
+
+# Object type = data.frame
+
+# Getting names of rows/columns
+
+colnames(recent_grads)
+rownames(recent_grads)
+
+# Checking for attributes
+
+attributes(recent_grads)
+
+# There are attributes for the columns.
+
+##---------------------------------
+# PROBLEM 2: COLLEGE MAJORS, Part B
+
+#1. Finding the major category with the highest and lowest median incomes.
+
+max(recent_grads$Median) #Verifying lowest and highest median incomes
+min(recent_grads$Median) # Max = 110,000, Min = 22,000
+
+#Highest = Engineering
+#Lowest = Education
+
+#2. Finding the avg median salary for both of those categories.
+
+engineering <- subset(recent_grads, #Avg median for Engineering
+                      recent_grads$Major_category == "Engineering")
+mean(engineering$Median) #Avg median salary for engineers is $57,382.76
+
+education <- subset(recent_grads,
+                    recent_grads$Major_category == "Education")
+mean(education$Median) #Avg median salary for education professionals is $32,350
+
+
+#3. Drilling down to data that meets criteria for whether there are professions where
+#(a) one of the top 10 professions with the highest median income and 
+# (b) are in the top ten professions with the highest share of women.
+
+majorityfemale <- subset(recent_grads, recent_grads$ShareWomen >= .51)
+View(majorityfemale) 
+
+# Of these professions, Astronomy and Astrophysics (ranked #8 of all jobs) both 
+# had the highest median income among professions with > 50% share of women ($62,000), though
+# it did not make the cut for being in the top 10 of professions dominated by them.
+
+#4. Are women underrepresented in STEM fields?
+
+View(majorityfemale)
+View(recent_grads)
+
+# Given that only 1 of the top 10 most lucrative professions are female "dominated"
+# (53.5%), I would say that women are underrepresented specifically in Engineering rather than STEM,
+# since there are professions aligned with STEM (e.g., Nursing) where women
+# account for 89.6% of the workforce. The true under-representation, however, is found in what STEM 
+# fields that appear to interest women more pay compared to the more computational
+# and engineering-driven fields that appear to attract more men.
