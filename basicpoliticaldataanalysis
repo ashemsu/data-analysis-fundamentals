@@ -1,0 +1,127 @@
+#Question 1A
+
+# Getting county_returns.csv
+
+library(tidyverse)
+
+install.packages("maps")
+install.packages("mapdata")
+
+library(maps)
+library(mapdata)
+library(readr)
+county_returns <- read_csv("~/Documents/Education/Dropbox/DATA101/DATA/RAW/county_returns.csv")
+
+# Merging county-level mapping data with electoral data
+
+county_votes  <- counties%>%
+  full_join(county_returns, by = c("region" = "state.name"))
+  full_join(county_returns, by = c("subregion" = "Geographic.Name"))
+  
+#1B - Creating new variables and integrating them with election/county data.
+  
+clinton_trump_outcomes <- subset(county_votes, select = -c(16, 14, 13, 12))%>%
+  mutate(clinton_prop = clinton/total_votes_2016)%>%
+  mutate(trump_prop = trump/total_votes_2016)%>% 
+  mutate(clinton_won = ifelse(trump_clinton_margin < 0, 'Yes', 'No'))
+
+#Question 2: Mapping the data
+
+library(ggplot2)
+library(viridisLite) #(No viridis package found)
+library(scales)
+
+# Clinton v Trump (County and state-level)
+
+ggplot() +
+  geom_polygon(data=clinton_trump_outcomes, aes(x = long, y = lat, group = group, fill = clinton_prop, color = clinton_won))+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2016 Results")
+
+# Question 3
+
+#County-level analysis:
+
+ggplot() +
+  geom_polygon(data=clinton_trump_outcomes, aes(x = long, y = lat, group = group, fill = clinton_prop))+
+  scale_fill_gradient2(low = muted("red"), mid = "white", high = muted("blue"), midpoint = .5)+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2016 Election Results")+
+  labs(fill = "% Dem Vote")
+
+#State-level analysis:
+
+ggplot() +
+  geom_polygon(data=states, aes(x=long, y=lat, group=group), fill = NA, col="lightgray", lwd=0.25)+
+  geom_polygon(data=clinton_trump_outcomes, aes(x = long, y = lat, group = group, fill = clinton_won))+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2016 Election Results")+
+  labs(fill = "Clinton Won")
+
+#3A
+
+ggplot() +
+  geom_polygon(data=clinton_trump_outcomes, aes(x = long, y = lat, group = group, fill = clinton_prop))+
+  scale_fill_gradient(low = "red", high = "blue")+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2016 Results")+
+  labs(fill = "% Clinton Won")
+
+#Though the state level option does well to immediately help you pinpoint 
+# who took the majority of a state, I think it important to leverage the gradient
+# when possible, as it offers a much more contextual perspective on how a greater number of
+# individuals participated in our election. Seeing this map paints a much clearer picture
+# of how Trump won back then, because seeing a statewide view of where Clinton may have won 
+# the majority still didn't accurately describe the sentiments of the non-liberal counties.
+
+# Question 4
+
+# To analyze Obama's margin over Clinton:
+
+# The data:
+
+romney_obama_outcomes <- subset(county_votes, select = -c(9, 10, 11, 15))%>%
+  mutate(obama_prop = obama/total_votes_2012)%>%
+  mutate(romney_prop = romney/total_votes_2012)%>% 
+  mutate(obama_won = ifelse(romney_obama_margin < 0, 'Yes', 'No'))
+
+# Obama v. Romney:
+
+ggplot() +
+  geom_polygon(data=romney_obama_outcomes, aes(x = long, y = lat, group = group, fill = obama_prop))+
+  scale_fill_gradient(low = "red", high = "blue")+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2012 Results")+
+  labs(fill = "% Obama Won")
+
+# Obama v. Clinton:
+
+
+clinton_obama_outcomes <- subset(county_votes, select = -c(9, 13,15, 16))%>%
+  mutate(obama_prop2 = obama/total_votes_2012)%>%
+  mutate(clinton_prop2 = clinton/total_votes_2016)%>% 
+  mutate(clinton_success = ifelse(clinton_prop2 > obama_prop2, 'Better', 'Worse'))
+
+# On a map:
+
+ggplot() +
+  geom_polygon(data=clinton_obama_outcomes, aes(x = long, y = lat, group = group, fill = clinton_prop2))+
+  scale_fill_gradient(low = "red", high = "blue")+
+  coord_quickmap()+
+  theme_void()+
+  ggtitle("2012 v 2016")+
+  labs(fill = "% Clinton > Obama")
+
+# Comparatively speaking, Clinton success was primarily in any state where a major city accounted
+# for the majority of the state's population (though one could argue
+# things were more polarized in 2016, which cut her campaign off at the knees). Obama (somehow) 
+# not only captured the coasts,but had a lot more support the midwest and rockies;
+# places where Clinton had a hard time capturing a single county. In all fairness, 
+# however, the candidates of the 2012 election were much more 
+# moderate overall, and that notion is reflected by the fact that over 2/3 of the 
+# states were a shade of purple in 2012.
