@@ -1,0 +1,84 @@
+#-------------------------------------------------
+# Topic 3 HW: Exploratory Data Analysis Homework
+# Name: Adefoluke Shemsu
+#-------------------------------------------------
+
+#-------------------------------------------------
+# Question 1
+
+library(tidyverse)
+summary(diamonds)
+
+ggplot(diamonds) +
+  geom_point(mapping=aes(x = carat, y = price, color=clarity), alpha = .5)
+
+# Based on the line of code above, and the summary of the diamonds data set,
+# clarity appears to correlate directly with the carat count of a diamond, 
+# which also concretely impacts the overall price.
+
+#-------------------------------------------------
+# Question 2
+
+nycflights13::flights
+
+# Flights by destination:
+
+ggplot(flights)+
+  geom_bar(aes(x=flight, color=dest), na.rm = T)
+
+# Average delay per destination.
+
+avg_fl_delay <- flights%>%
+  filter(arr_delay >=0)%>%
+  group_by(flight, dest)%>%
+  summarise(avg_delay = mean(arr_delay, na.rm =T))%>%
+  ungroup()%>%
+  arrange(-avg_delay)
+
+ggplot(avg_fl_delay)+
+  geom_point(aes(x = flight, y = avg_delay, color = dest), na.rm = T, alpha = .5)
+
+# Conclusion: There isn't a substantial correlation between average flight
+# delays and destination, as the graph displays no notable trends. This would
+# be surprising if not for the analysis we recently conducted which indicated
+# that further flights actually were more likely to make up time during the flight,
+# thus leveling out the average arrive time of a flight. 
+
+#-------------------------------------------------
+# Question 3A
+
+# Average speed against distance:
+# (eliminating the one outlier distance that was 5,000 mi)
+
+speed_vs_dist <- flights%>%
+  filter(distance < 3000)%>%
+  group_by(distance, dep_time, arr_time, dest)%>%
+  summarise(avg_speed = mean(distance/hour*100,na.rm = T))
+
+ggplot(speed_vs_dist)+
+  geom_point(aes(x = distance, y = avg_speed, color = distance), alpha = .45)
+
+# Conclusion: With the exception of a few outliers, it would seem that the
+# longer the distance, the faster the plane's average speed.
+
+
+#-------------------------------------------------
+# Question 3B
+
+# Analysis for on-time flights:
+
+on_time_fl <- flights%>%
+  group_by(flight, sched_arr_time, arr_delay, arr_time, dep_time, dep_delay)%>%
+  summarise(on_time = (arr_time <= sched_arr_time))
+
+# Percentage of fights arriving on time:
+
+ggplot(on_time)+
+  geom_point(aes(x = dep_delay, y = arr_delay, color = on_time), alpha = .5)
+  
+#-------------------------------------------------
+# Question 3C
+
+# Roughly speaking, the cut-off point for a departure delay where you can
+# still expect to get where you need to go is 5 hours. After that point, the impact of
+# the departure delay on the arrival delay (with ties into arrival time) drops tremendously.
