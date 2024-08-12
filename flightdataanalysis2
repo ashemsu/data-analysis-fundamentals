@@ -1,0 +1,121 @@
+#----------------------------------------------
+# DATA 101 - HOMEWORK 2
+# 
+#----------------------------------------------
+
+# Please save this script as "YOUR LAST NAME_HW2.R" and upload the script to Canvas. 
+# You should also upload a word document containing your write up and graphs.
+# Please type your code into the sections outlined below. 
+
+#----------------------------------------------
+# Question 1
+
+# This simplifies the code by shaving off the "fat" of the data we're looking to
+# analyze. In other words, it cleans the data and enable us to more accurately 
+# view the information that we want to work from.
+
+#----------------------------------------------
+# Question 2
+
+# The data:
+
+library(tidyverse)
+install.packages("nycflights13")
+library(nycflights13)
+flights
+View(flights)
+
+#Calculating for the delay:
+
+avg_delay <- summarise(by_day, delay = mean(dep_delay, na.rm = TRUE))
+
+# Flights not cancelled:
+
+not_cancelled <- flights %>%
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+# If 328,063 weren't cancelled of 336,776, I can quick do that math:
+
+327346/336776 # = 97.19992% not cancelled, which leaves ~ 2.59% or:
+336776-327346
+# 9430 cancelled. My proportion of cancelled flights should match that number.
+
+cancelled_per_day <- 
+  flights %>%
+  mutate(cancelled = (is.na(arr_delay) | is.na(dep_delay))) %>%
+  group_by(year, month, day) %>%
+  summarise(
+    cancelled_num = sum(cancelled),
+    flights_num = n(),
+  )
+
+not_cancelled %>%
+  group_by(arr_delay) %>%
+  summarise(n = n())
+
+ggplot(cancelled_per_day) +
+  geom_point(aes(x = flights_num, y = cancelled_num))+
+
+  ggplot(avg_delay)+
+  geom_point(aes(x = delay, y = day))
+
+cancelled_and_delays <- 
+  flights %>%
+  mutate(cancelled = (is.na(arr_delay) | is.na(dep_delay))) %>%
+  group_by(year, month, day) %>%
+  summarise(
+    cancelled_prop = mean(cancelled),
+    avg_dep_delay = mean(dep_delay, na.rm = TRUE),
+    avg_arr_delay = mean(arr_delay, na.rm = TRUE)
+  ) %>%
+  ungroup()
+
+ggplot(cancelled_and_delays) +
+  geom_point(aes(x = avg_dep_delay, y = cancelled_prop))
+
+#Yes, our intuition seems to hold to the notion that the amount of average cancellations
+# increases as the average delay also increases.
+
+#----------------------------------------------
+# Question 3
+
+# Part 1 answer:
+
+flights %>%
+  ggplot(aes(x=factor(hour), fill=dep_delay>0 | is.na(dep_delay)))+ 
+  geom_bar()+
+  coord_flip()
+
+# Part 2 answer:
+
+flights %>%
+  ggplot(aes(x=factor(hour), fill=dep_delay<=dep_time))+ 
+  geom_bar()+
+  coord_flip()
+
+# Based on the graph, 8:00 AM is the best time to book a flight if you want your
+# departure time to be on time or early.
+
+
+#----------------------------------------------
+# Question 4
+
+flights %>%
+  ggplot(aes(x=factor(carrier), fill=dep_delay>=30))+ 
+  geom_bar()+
+  coord_flip()
+
+# According the graph, the carrier that is most likely to experience a delay of
+# 30 or more minutes is EV.
+
+#----------------------------------------------
+# Question 5
+
+flights %>%
+  ggplot(aes(x=factor(dest), fill=arr_delay<=1))+ 
+  geom_bar()+
+  coord_flip()
+
+# According to the graph, ORD has the smallest average arrival delay, which also 
+# plays to assumptions that could be made about its central location, size 
+# (which means larger and faster planes) in comparison  to other destinations.
